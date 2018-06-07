@@ -90,14 +90,23 @@ Now, we'll update the `fetchPost` function to return a `Future<Post>`. To do so,
 we'll need to:
 
   1. Convert the response body into a json `Map` with the `dart:convert` package
-  2. Convert the json `Map` into a `Post` using the `fromJson` factory.
+  2. If the server returns an "OK" response with a status code of 200, convert 
+  the json `Map` into a `Post` using the `fromJson` factory.
+  3. If the server returns an unexpected response, throw an error
 
+<!-- skip -->
 ```dart
 Future<Post> fetchPost() async {
-  final response = await http.get('https://jsonplaceholder.typicode.com/posts/1');
-  final responseJson = json.decode(response.body); 
-  
-  return new Post.fromJson(responseJson); 
+  final response =
+      await http.get('https://jsonplaceholder.typicode.com/posts/1');
+
+  if (response.statusCode == 200) {
+    // If server returns an OK response, parse the JSON
+    return new Post.fromJson(json.decode(response.body));
+  } else {
+    // If that response was not OK, throw an error.
+    throw new Exception('Failed to load post');
+  }
 }
 ```
 
@@ -134,6 +143,10 @@ new FutureBuilder<Post>(
 );
 ```
 
+## Testing
+
+For information on how to test this class, please see the 
+
 ## Complete Example
 
 ```dart
@@ -146,9 +159,14 @@ import 'package:http/http.dart' as http;
 Future<Post> fetchPost() async {
   final response =
       await http.get('https://jsonplaceholder.typicode.com/posts/1');
-  final responseJson = json.decode(response.body);
 
-  return new Post.fromJson(responseJson);
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON
+    return new Post.fromJson(json.decode(response.body));
+  } else {
+    // If that call was not successful, throw an error.
+    throw new Exception('Failed to load post');
+  }
 }
 
 class Post {
